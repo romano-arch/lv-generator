@@ -729,22 +729,51 @@ textarea { resize: vertical; min-height: 70px; }
   .lv-print-footer { display: none; }
 }
 
-@media (max-width: 600px) {
-  .content { padding: 14px; }
-  .blocks-grid { grid-template-columns: 1fr; }
-  .form-row { flex-direction: column; }
-}
-@media (max-width: 600px) {
-  .content { padding: 14px; }
-  .header { padding: 12px 16px; }
-  .card { padding: 16px; }
-  .blocks-grid { grid-template-columns: 1fr; }
+@media (max-width: 768px) {
+  /* Layout */
+  .content { padding: 12px; max-width: 100%; }
+  .card { padding: 14px; margin-bottom: 12px; border-radius: 12px; }
+  .card-title { font-size: 14px; margin-bottom: 14px; padding-bottom: 12px; }
+
+  /* Header – kompakter */
+  .header { padding: 10px 14px; gap: 10px; }
+  .header-title h1 { font-size: 13px; }
+  .header-title p { font-size: 10px; }
+  .header-actions { gap: 5px; }
+  .btn-sm { height: 30px; padding: 0 9px; font-size: 11px; }
+
+  /* Tabs – volle Breite, gut tippbar */
+  .tabs { padding: 0 4px; gap: 0; }
+  .tab { padding: 12px 8px; font-size: 11px; gap: 3px; flex: 1; justify-content: center; }
+
+  /* Formular – einspaltig */
   .form-row { flex-direction: column; gap: 10px; }
-  .form-group { min-width: unset; }
-  .btn { padding: 12px 18px; font-size: 14px; }
-  .freq-btn { padding: 10px 4px; font-size: 13px; }
-  .tab { padding: 12px 12px; font-size: 12px; }
-  .vorlagen-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-group { min-width: unset; width: 100%; }
+  input[type=text], textarea, select { font-size: 16px; padding: 12px 14px; }
+
+  /* Konfigurator – einspaltig */
+  .blocks-grid { grid-template-columns: 1fr; gap: 8px; }
+  .block-card { padding: 14px; }
+  .freq-btn { padding: 11px 4px; font-size: 13px; min-height: 44px; }
+
+  /* Positionen */
+  .pos-item { padding: 10px; gap: 10px; }
+  .pos-item label { font-size: 14px; }
+  .checkbox { width: 24px; height: 24px; }
+
+  /* Buttons */
+  .btn { height: 44px; padding: 0 18px; font-size: 14px; border-radius: 10px; }
+  .btn-ghost { height: 44px; }
+
+  /* Notiz-Toolbar */
+  .niz-color-btn { width: 30px; height: 30px; }
+  .niz-size-btn { height: 36px; padding: 0 12px; font-size: 14px; }
+
+  /* Vorlagen */
+  .vorlagen-grid { grid-template-columns: 1fr; }
+
+  /* Dropdown */
+  select { min-height: 44px; }
 }
 
 
