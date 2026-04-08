@@ -1342,25 +1342,51 @@ function renderPositions(){
       const customLines = (state.blockCustomLines && state.blockCustomLines[b.id]) ? state.blockCustomLines[b.id] : [];
       const blockId = b.id;
       const bFreq2 = (state.blockDays && state.blockDays[blockId]) ? Object.values(state.blockDays[blockId]).filter(Boolean).length : (state.blocks[blockId].freq||1);
-      customLines.forEach((line,ci)=>{
-        const item=document.createElement('div');
-        item.className='pos-item';
-        item.style.cssText='background:#f0f9ff;border-left:3px solid var(--accent);';
-        const defType2 = line.type === 'w' ? String(bFreq2) : (line.type||'w');
-        const curT2 = defType2;
-        const opts2=[
-          {v:'1',l:'1×/Wo'},{v:'2',l:'2×/Wo'},{v:'3',l:'3×/Wo'},{v:'4',l:'4×/Wo'},{v:'5',l:'5×/Wo'},{v:'6',l:'6×/Wo'},
-          {v:'14t',l:'14-täglich'},{v:'m',l:'monatlich'},{v:'q',l:'quartalsweise'},
-          {v:'nb',l:'nach Bedarf'},{v:'sr',l:'Sichtreinigung'}
-        ].map(o=>`<option value="${o.v}" ${curT2===o.v?'selected':''}>${o.l}</option>`).join('');
-        item.innerHTML=`
-          <input type="checkbox" class="checkbox" ${line.active!==false?'checked':''} onchange="blockToggleLineActive('${blockId}',${ci},this.checked)">
-          <input type="text" value="${escH(line.text)}" placeholder="Eigene Leistung eingeben…"
-            oninput="blockSetLineText('${blockId}',${ci},this.value)"
-            style="flex:1;min-width:0;border:none;border-bottom:1.5px solid var(--border);background:transparent;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--text);padding:3px 4px;outline:none">
-          <select onchange="blockSetLineType('${blockId}',${ci},this.value)" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;color:var(--mid);background:var(--light);border:1.5px solid rgba(34,86,168,0.2);border-radius:6px;padding:4px 6px;cursor:pointer;-webkit-appearance:none;appearance:none;min-width:110px">${opts2}</select>
-          <button onclick="blockRemoveLine('${blockId}',${ci})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:2px 6px;flex-shrink:0" title="Zeile entfernen">✕</button>`;
-        sec.appendChild(item);
+      customLines.forEach(function(line, ci){
+        if(!line.type||line.type==='w') line.type=(bFreq2>=1&&bFreq2<=6)?String(bFreq2):'1';
+        const curT2 = line.type;
+        const lineDays2 = line.days || EMPTY_DAYS;
+
+        var optsHTML2 = '';
+        [['1','1x/Wo'],['2','2x/Wo'],['3','3x/Wo'],['4','4x/Wo'],['5','5x/Wo'],['6','6x/Wo'],
+         ['14t','14-taegl.'],['m','monatlich'],['q','quartalsweise'],['nb','nach Bedarf'],['sr','Sichtreinigung']
+        ].forEach(function(o){
+          optsHTML2 += '<option value="'+o[0]+'"'+(curT2===o[0]?' selected':'')+'>'+o[1]+'</option>';
+        });
+
+        var daysHTML2 = '';
+        ALL_DAYS.forEach(function(d){
+          var chk2 = lineDays2[d] ? ' checked' : '';
+          daysHTML2 += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">';
+          daysHTML2 += '<input type="checkbox" data-bfi="'+blockId+'-'+ci+'" data-bfd="'+d+'"'+chk2+' style="width:15px;height:15px;cursor:pointer">';
+          daysHTML2 += '<span style="font-size:10px;font-weight:700;color:#64748b">'+d+'</span></div>';
+        });
+
+        var chkd2 = (line.active!==false) ? ' checked' : '';
+        var html2 = '<div style="padding:8px 13px;border-bottom:1px solid #e0f0ff;background:#f0f9ff;border-left:3px solid var(--accent)">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+          + '<input type="checkbox" class="checkbox" data-bcai="'+blockId+'-'+ci+'"'+chkd2+'>'
+          + '<input type="text" data-bcti="'+blockId+'-'+ci+'" value="'+escH(line.text||'')+'" placeholder="Eigene Leistung eingeben..." '
+          + 'style="flex:1;border:none;border-bottom:1.5px solid var(--border);background:transparent;font-size:14px;padding:3px 4px;outline:none">'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;gap:10px;padding-left:32px">'
+          + '<select data-bcsi="'+blockId+'-'+ci+'" style="font-size:13px;font-weight:600;color:var(--mid);background:var(--light);border:1.5px solid rgba(34,86,168,0.2);border-radius:6px;padding:4px 8px;min-width:115px">'+optsHTML2+'</select>'
+          + '<div style="display:flex;gap:8px;align-items:center;border-left:2px solid #e2e8f0;padding-left:10px">'+daysHTML2+'</div>'
+          + '<button data-bcdeli="'+blockId+'-'+ci+'" style="background:none;border:none;color:#ef4444;font-size:18px;cursor:pointer;padding:2px 8px;margin-left:auto">X</button>'
+          + '</div></div>';
+
+        const div2 = document.createElement('div');
+        div2.innerHTML = html2;
+
+        var elA2=div2.querySelector('[data-bcai="'+blockId+'-'+ci+'"]'); if(elA2) elA2.onchange=function(){ blockToggleLineActive(blockId,ci,this.checked); };
+        var elT2=div2.querySelector('[data-bcti="'+blockId+'-'+ci+'"]'); if(elT2) elT2.oninput=function(){ blockSetLineText(blockId,ci,this.value); };
+        var elS2=div2.querySelector('[data-bcsi="'+blockId+'-'+ci+'"]'); if(elS2) elS2.onchange=function(){ blockSetLineType(blockId,ci,this.value); renderPositions(); };
+        var elD2=div2.querySelector('[data-bcdeli="'+blockId+'-'+ci+'"]'); if(elD2) elD2.onclick=function(){ blockRemoveLine(blockId,ci); };
+        div2.querySelectorAll('[data-bfi="'+blockId+'-'+ci+'"]').forEach(function(cb){
+          cb.onchange=function(){ blockSetLineDay(blockId,ci,cb.getAttribute('data-bfd'),cb.checked); };
+        });
+
+        sec.appendChild(div2);
       });
       // Add-line button
       const addBtn2=document.createElement('div');
@@ -1420,6 +1446,10 @@ function renderFreiBlock(sec, b){
   sec.appendChild(title);
 
   if(!state.freiLines) state.freiLines=[];
+  // DEBUG: clear freiLines that might be corrupt
+  if(state.freiLines) {
+    state.freiLines = state.freiLines.filter(function(l){ return l && typeof l === 'object'; });
+  }
   state.freiLines.forEach(function(line,i){
     // Fix legacy type 'w'
     if(!line.type||line.type==='w') line.type=(bDayCnt>=1&&bDayCnt<=6)?String(bDayCnt):'1';
@@ -1438,11 +1468,9 @@ function renderFreiBlock(sec, b){
     // Build day checkboxes HTML
     var daysHTML = '';
     ALL_DAYS.forEach(function(d){
-      var chk = (isW && lineDays[d]) ? ' checked' : '';
-      var dis = isW ? '' : ' disabled';
-      var op = isW ? '1' : '0.3';
-      daysHTML += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;opacity:'+op+'">';
-      daysHTML += '<input type="checkbox" data-fi="'+i+'" data-fd="'+d+'"'+chk+dis+' style="width:15px;height:15px;cursor:'+(isW?'pointer':'default')+'">';
+      var chk = lineDays[d] ? ' checked' : '';
+      daysHTML += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">';
+      daysHTML += '<input type="checkbox" data-fi="'+i+'" data-fd="'+d+'"'+chk+' style="width:15px;height:15px;cursor:pointer">';
       daysHTML += '<span style="font-size:10px;font-weight:700;color:#64748b">'+d+'</span></div>';
     });
 
@@ -1462,13 +1490,13 @@ function renderFreiBlock(sec, b){
     const div = document.createElement('div');
     div.innerHTML = html;
 
-    // Wire up events
-    div.querySelector('[data-fai="'+i+'"]').onchange = function(){ freiToggleActive(i, this.checked); };
-    div.querySelector('[data-fti="'+i+'"]').oninput  = function(){ freiSetText(i, this.value); };
-    div.querySelector('[data-fsi="'+i+'"]').onchange = function(){ freiSetType(i, this.value); renderPositions(); };
-    div.querySelector('[data-fdeli="'+i+'"]').onclick = function(){ freiRemoveLine(i); };
+    // Wire up events (null-safe)
+    var elA=div.querySelector('[data-fai="'+i+'"]'); if(elA) elA.onchange=function(){ freiToggleActive(i,this.checked); };
+    var elT=div.querySelector('[data-fti="'+i+'"]'); if(elT) elT.oninput=function(){ freiSetText(i,this.value); };
+    var elS=div.querySelector('[data-fsi="'+i+'"]'); if(elS) elS.onchange=function(){ freiSetType(i,this.value); renderPositions(); };
+    var elD=div.querySelector('[data-fdeli="'+i+'"]'); if(elD) elD.onclick=function(){ freiRemoveLine(i); };
     div.querySelectorAll('[data-fi="'+i+'"]').forEach(function(cb){
-      cb.onchange = function(){ freiSetDay(i, cb.getAttribute('data-fd'), cb.checked); };
+      cb.onchange=function(){ freiSetDay(i,cb.getAttribute('data-fd'),cb.checked); };
     });
 
     sec.appendChild(div);
@@ -1573,6 +1601,12 @@ function blockSetLineText(blockId,i,v){
 function blockSetLineType(blockId,i,v){
   if(!state.blockCustomLines||!state.blockCustomLines[blockId]) return;
   state.blockCustomLines[blockId][i].type=v;
+  saveState();
+}
+function blockSetLineDay(blockId,i,day,val){
+  if(!state.blockCustomLines||!state.blockCustomLines[blockId]||!state.blockCustomLines[blockId][i]) return;
+  if(!state.blockCustomLines[blockId][i].days) state.blockCustomLines[blockId][i].days={Mo:false,Di:false,Mi:false,Do:false,Fr:false,Sa:false};
+  state.blockCustomLines[blockId][i].days[day]=val;
   saveState();
 }
 function blockToggleLineActive(blockId,i,v){
@@ -1997,12 +2031,12 @@ function saveState(){
   const kunde={};
   fields.forEach(f=>{ const el=document.getElementById('kunde-'+f); if(el) kunde[f]=el.value; });
   state.kunde=kunde;
-  try{ localStorage.setItem('lv_state_v9',JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem('lv_state_v10',JSON.stringify(state)); }catch(e){}
 }
 
 function loadState(){
   try{
-    const s=JSON.parse(localStorage.getItem('lv_state_v9')||'null');
+    const s=JSON.parse(localStorage.getItem('lv_state_v10')||'null');
     if(!s) return;
     if(s.blocks) Object.keys(s.blocks).forEach(id=>{ if(state.blocks[id]) state.blocks[id]=s.blocks[id]; });
     if(s.positions) Object.keys(s.positions).forEach(k=>{ state.positions[k]=s.positions[k]; });
@@ -2543,7 +2577,7 @@ function resetAll(){
   if(ocrEl) ocrEl.style.display = 'none';
 
   // Clear localStorage
-  try { localStorage.removeItem('lv_state_v9'); } catch(e){}
+  try { localStorage.removeItem('lv_state_v10'); } catch(e){}
 
   renderBlocks();
   showTab('kunde');
