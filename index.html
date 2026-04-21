@@ -499,6 +499,7 @@ textarea { resize: vertical; min-height: 70px; }
   .header, .tabs, .no-print,
   #section-kunde, #section-konfigurator,
   #section-positionen, #section-notizen,
+  .toast, #toast,
   .btn { display: none !important; }
 
   #section-vorschau { display: block !important; }
@@ -592,21 +593,29 @@ textarea { resize: vertical; min-height: 70px; }
   /* ─────────────────────────────────────────────
      LEISTUNGSTABELLE · schlichter Stil (Peter)
      Keine Nummerierungen — einfach, klar, lesbar
+
+     WICHTIG: border-collapse: separate löst den Chromium-Bug bei dem
+     auf Seite 2+ vertikale Zelllinien nach einem Seitenumbruch fehlen.
+     Mit border-spacing: 0 sehen die Zellen wie collapsed aus.
+     Ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1393333
      ───────────────────────────────────────────── */
   .lv-print-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 9pt;
+    line-height: 1.25;
     page-break-inside: auto;
     margin-top: 0;
-    /* Außenrahmen rundum */
+    /* Kompletter Außenrahmen (alle 4 Seiten) */
     border: 0.5pt solid #c8d8ee;
   }
   .lv-print-table thead { display: table-header-group; break-inside: avoid; }
   .lv-print-table .block-tbody { page-break-inside: auto; }
   .lv-print-table tr { page-break-inside: avoid; }
 
-  /* Spalten-Header */
+  /* Spalten-Header — dunkelblau
+     border-right + border-bottom in hellblau für sauberes Raster */
   .lv-print-table thead tr.tr-col-header th {
     background: #0f1f3d !important;
     color: white !important;
@@ -631,17 +640,16 @@ textarea { resize: vertical; min-height: 70px; }
   .lv-print-table thead tr.tr-col-header th.th-woche { width: 14mm; }
   .lv-print-table thead tr.tr-col-header th.th-monat { width: 22mm; }
 
-  /* Block-Überschriften — hellblaue Zeile mit feinen vertikalen Trennlinien */
+  /* Block-Überschriften — hellblaue Zeile mit feinen Rastern (separate-Modell) */
   .lv-print-table .tr-block td {
     background: #e8f0fb !important;
     color: #0f1f3d !important;
     font-weight: 700;
     font-size: 10pt;
-    padding: 2.5mm 2mm;
-    border-top: 0.5pt solid #c8d8ee;
-    border-bottom: 0.5pt solid #c8d8ee;
-    border-left: none;
+    padding: 1.8mm 2mm;
+    border: none;
     border-right: 0.25pt solid #c8d8ee;
+    border-bottom: 0.5pt solid #c8d8ee;
     letter-spacing: 0.2px;
   }
   .lv-print-table .tr-block td:last-child {
@@ -654,13 +662,12 @@ textarea { resize: vertical; min-height: 70px; }
     display: none !important;
   }
 
-  /* Positions-Zeilen — mit feinen vertikalen Trennlinien zwischen Spalten */
+  /* Positions-Zeilen — nur border-right + border-bottom (separate-Modell) */
   .lv-print-table .tr-pos td {
-    padding: 2mm 2mm;
-    border-bottom: 0.25pt solid #e0e0e0;
-    border-left: none;
+    padding: 1.5mm 2mm;
+    border: none;
     border-right: 0.25pt solid #e0e0e0;
-    border-top: none;
+    border-bottom: 0.25pt solid #e0e0e0;
     color: #1a1a1a;
     vertical-align: middle;
     background: white !important;
@@ -1709,7 +1716,7 @@ function resolvePosDays(key, t, blockId, blockFreq){
 function typeToWoche(t){
   if(typeIsWeekly(t)) return String(parseInt(t));
   if(t==='14t') return '14t';
-  return '';
+  return '&nbsp;';
 }
 function typeToMonat(t){
   if(t==='m') return '1× mtl.';
@@ -1717,7 +1724,7 @@ function typeToMonat(t){
   if(t==='14t') return '14-tägl.';
   if(t==='sr') return 'SR';
   if(t==='nb') return 'NB';
-  return '';
+  return '&nbsp;';
 }
 function typeIsWeekly(t){
   const n = parseInt(t);
@@ -1864,7 +1871,7 @@ function renderPreview(){
     const freq = bdc > 0 ? bdc : rawFreq;
     const blockTitle = b.customBlock ? escH(state.freiBlockName||b.name) : escH((state.blockNames&&state.blockNames[b.id])||b.name);
     let blockRows = '';
-    const blockHeaderRow = `<tr class="tr-block"><td class="tr-block-title"><span class="block-nr">${blockNr}</span>${blockTitle}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    const blockHeaderRow = `<tr class="tr-block"><td class="tr-block-title"><span class="block-nr">${blockNr}</span>${blockTitle}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
     if(b.customBlock){
       // Freitext lines
       const bDays4=(state.blockDays&&state.blockDays[b.id])?state.blockDays[b.id]:EMPTY_DAYS;
@@ -1877,7 +1884,7 @@ function renderPreview(){
         const w=typeToWoche(ft);
         const mo=typeToMonat(ft);
         const effDays4=line.days?line.days:((ft===String(freq))?bDays4:EMPTY_DAYS);
-        const x=d=>typeIsWeekly(ft)&&effDays4[d]?'<strong>X</strong>':'';
+        const x=d=>typeIsWeekly(ft)&&effDays4[d]?'<strong>X</strong>':'&nbsp;';
         blockRows+=`<tr class="tr-pos">
           <td class="td-pos"><span class="pos-nr">${blockNr}.${posNr}</span>${escH(line.text)}</td>
           <td class="td-woche">${w}</td>
@@ -1896,7 +1903,7 @@ function renderPreview(){
         const w=typeToWoche(t);
         const mo=typeToMonat(t);
         const tdays=resolvePosDays(key,t,b.id,freq);
-        const x=d=>typeIsWeekly(t)&&tdays[d]?'<strong>X</strong>':'';
+        const x=d=>typeIsWeekly(t)&&tdays[d]?'<strong>X</strong>':'&nbsp;';
         blockRows+=`<tr class="tr-pos">
           <td class="td-pos"><span class="pos-nr">${blockNr}.${posNr}</span>${p.text}</td>
           <td class="td-woche">${w}</td>
@@ -1916,7 +1923,7 @@ function renderPreview(){
         const cw=typeToWoche(cft);
         const cmo=typeToMonat(cft);
         const effDaysP=line.days?line.days:((cft===String(freq))?bDaysP:EMPTY_DAYS);
-        const cx=d=>typeIsWeekly(cft)&&effDaysP[d]?'<strong>X</strong>':'';
+        const cx=d=>typeIsWeekly(cft)&&effDaysP[d]?'<strong>X</strong>':'&nbsp;';
         blockRows+=`<tr class="tr-pos">
           <td class="td-pos"><span class="pos-nr">${blockNr}.${posNr}</span>${escH(line.text)}</td>
           <td class="td-woche">${cw}</td><td class="td-monat">${cmo}</td>
